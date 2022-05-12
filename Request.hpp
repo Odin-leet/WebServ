@@ -23,15 +23,20 @@ class Request
 		bool settransferchunks(std::string ther);
 		void setcontent_length(std::string len);
 		void setcontent_type(std::string type);
+		void sethttpversion(std::string stri);
+		std::string get_requestur();
+		void setrequest(std::string str);
+		std::string get_httpversion();
 		std::string get_method();
 		std::string gethost();
 		bool get_connection();
-		//char *get_useragent();
 		char *accept_encoding();
 
 	private:
 		std::string method;
+		std::string thhpversion;
 		std::string host;
+		std::string requestur;
 		bool Connection;
 		bool transferchunks;
 		std::string content_type;

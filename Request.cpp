@@ -45,9 +45,38 @@ std::ostream &			operator<<( std::ostream & o, Request const & i )
 /*
 ** --------------------------------- METHODS ----------------------------------
 */
+bool			Request::get_connection()
+{
+	return Connection;
+}
+std::string			Request::gethost()
+{
+	return host;
+}
+std::string				Request::get_requestur()
+{
+	return requestur;
+}
+std::string				Request::get_httpversion()
+{
+	return	thhpversion;
+}
+std::string				Request::get_method()
+{
+	return method;
+}
+
 void					Request::setmethod(std::string me)
 {
 	method = me;
+}
+void					Request::sethttpversion(std::string me)
+{
+	thhpversion = me;
+}
+void					Request::setrequest(std::string me)
+{
+	requestur = me;
 }
 void					Request::sethost(std::string ho)
 {
@@ -55,8 +84,15 @@ void					Request::sethost(std::string ho)
 }
 void					Request::setconnection(std::string str)
 {
-	if (str == "Keep-alive")
+	std::cout <<"|"<<str<<"|"<<std::endl;
+//	std::cout<<"|"<<
+	std::cout<<str.compare("keep-alive\r")<<std::endl;
+	if (str == "keep-alive\r")
+	{
 	Connection = true;
+		std::cout <<"im here "<<str<<std::endl;
+
+	}
 	if (str == "close")
 	Connection = false;
 }
