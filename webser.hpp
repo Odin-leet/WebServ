@@ -2,17 +2,13 @@
 #define WEB_SERVER
 #include <string>
 #include<iostream>
-
-typedef struct stru{
-    std::string user;
-    int approval;
-    int version;
-    stru *next;
-
-}           t_str;
-t_str
+#include "Request.hpp"
+#include <vector>
+#include "server.hpp"
+#include "location.hpp"
 
 
+//#include "root.hpp"
 
 
 #endif 
