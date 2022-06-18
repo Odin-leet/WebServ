@@ -1,21 +1,32 @@
 #include "Request.hpp"
-
+#include <fstream>
+#include <fcntl.h>
 /*
-** ------------------------------- CONSTRUCTOR --------------------------------
-*/
+ ** ------------------------------- CONSTRUCTOR --------------------------------
+ */
 
 Request::Request()
 {
+	writingchar = 0;
+	requestcomplete = 0;
+	chunksize = -1;
+	bodylenght = 0;
+	headerscopmlete = 0;
+	requeststatus = 0;
+	chunkcomplete = true;
+	pathbody="";
+	Reminder = 0;
 }
 
 Request::Request( const Request & src )
 {
+	*this = src;
 }
 
 
 /*
-** -------------------------------- DESTRUCTOR --------------------------------
-*/
+ ** -------------------------------- DESTRUCTOR --------------------------------
+ */
 
 Request::~Request()
 {
@@ -23,15 +34,35 @@ Request::~Request()
 
 
 /*
-** --------------------------------- OVERLOAD ---------------------------------
-*/
+ ** --------------------------------- OVERLOAD ---------------------------------
+ */
 
 Request &				Request::operator=( Request const & rhs )
 {
-	//if ( this != &rhs )
-	//{
-		//this->_value = rhs.getValue();
-	//}
+	chunksize = rhs.chunksize;
+	method = rhs.method;
+	writingchar = rhs.writingchar;
+	chunkcomplete = rhs.chunkcomplete;
+	ipaddress = rhs.ipaddress;
+	port = rhs.	port;
+	setsocketid = rhs.setsocketid;
+	thhpversion = rhs.thhpversion;
+	host = rhs.host;
+	thereistraansfer = rhs.thereistraansfer;
+	requestur = rhs.requestur;
+	Connection = rhs.Connection;
+	transferchunks = rhs.transferchunks;
+	content_type = rhs.content_type;
+	content_lenght = rhs.content_lenght;
+	data = rhs.data;
+	requestcomplete = rhs.requestcomplete;
+	headerscopmlete = rhs.headerscopmlete;
+	pathbody = rhs.pathbody;
+	requeststatus = rhs.requeststatus;
+	filediscriptor = rhs.filediscriptor;
+	bodylenght = rhs.bodylenght;
+	Reminder = rhs.Reminder;	
+	backup = rhs.backup;
 	return *this;
 }
 
@@ -43,8 +74,12 @@ std::ostream &			operator<<( std::ostream & o, Request const & i )
 
 
 /*
-** --------------------------------- METHODS ----------------------------------
-*/
+ ** --------------------------------- METHODS ----------------------------------
+ */
+bool			Request::IsHex(const std::string& str) 
+{
+  return (str.find_first_not_of("0123456789abcdefABCDEF", 0) == std::string::npos);
+}
 void			Request::settransferstat(bool j)
 {
 	thereistraansfer = j;
@@ -53,7 +88,7 @@ bool			Request::gettransferstat()
 {
 	return thereistraansfer;
 }
-bool			Request::get_connection()
+int			Request::get_connection()
 {
 	return Connection;
 }
@@ -76,6 +111,7 @@ std::string				Request::get_method()
 
 void					Request::setmethod(std::string me)
 {
+
 	method = me;
 }
 void					Request::sethttpversion(std::string me)
@@ -92,17 +128,14 @@ void					Request::sethost(std::string ho)
 }
 void					Request::setconnection(std::string str)
 {
-	std::cout <<"|"<<str<<"|"<<std::endl;
-//	std::cout<<"|"<<
-	std::cout<<str.compare("keep-alive")<<std::endl;
-	if (str == "keep-alive")
-	{
-	Connection = true;
-		std::cout <<"im here "<<str<<std::endl;
 
+	//std::cout<<str.compare("keep-alive")<<std::endl;
+	if (str.compare("keep-alive") == 0)
+	{
+		Connection = 1;
 	}
-	if (str == "close")
-	Connection = false;
+	else
+		Connection = 0;
 }
 //void					Request::setuser_agent(std::string *us)
 //{
@@ -124,7 +157,7 @@ std::string				Request::get_port()
 
 void					Request::set_ip(std::string op)
 {
-	 ipaddress = op;
+	ipaddress = op;
 }
 void					Request::set_port(std::string op)
 {
@@ -145,24 +178,354 @@ void					Request::setcontent_type(std::string type)
 }
 bool					Request::settransferchunks(std::string len)
 {
-		settransferstat(true);	
-		if (len.find("chunked") == std::string::npos)
-			transferchunks = false;
-		else
-		    transferchunks = true;
-		if (transferchunks == true)
-			std::cout<<"im hererereree is true"<<std::endl;
-		else
-			std::cout<<"im hererereree is false"<<std::endl;
+	settransferstat(true);	
+	if (len.find("chunked") == std::string::npos)
+		transferchunks = false;
+	else
+		transferchunks = true;
+	return (transferchunks);
 }
 bool					Request::gettransferchunks()
 {
 	return transferchunks;
 }
 
-/*
-** --------------------------------- ACCESSOR ---------------------------------
-*/
+std::string				Request::getrandomname()
+{
+	srand(time(NULL));
+	std::string alpha = "abcdefghijklmnopqrstuvwxyz";
+	std::string result = "";
+	for (int i = 0; i<12; i++)
+		result = result + alpha[rand() % alpha.size()];
+	return (result);
+}
+void					Request::adddata(char *buffer, int c)
+{
+	//	data.append(buffer,c//);
+	if (Reminder == 0)
+	{
+		Reminder = 1;
+		std::cout<<"this is the oldest data : "<<data<<std::endl;
+	}
+	data.append(buffer,c);
+	std::cout<<"-----------------------------------------------------"<<std::endl;
+}
+void					Request::setunchunkedbody()
+{
+	//while (!requestcomplete)
+	//{
+		std::cout<<data<<std::endl;
+	//	filediscriptor = open(pathbody.c_str(), O_CREAT | O_RDWR | O_APPEND, 0666);
+		//std::cout<<" size : "<<bodylenght + data.size() <<" content lentgh "<<stoi(content_lenght)<<std::endl;
+		if ((bodylenght + data.size()) <= stoi(content_lenght))
+		{
+			bodylenght += data.size();
+		//	std::cout<< "" the file discriptor "<<std::endl;
+			std::cout<<"charactere created :" << write(filediscriptor,data.c_str(),data.size())<<std::endl;
+			data.erase();
+		}
+		if (bodylenght == stoi(content_lenght))
+		{
+			requeststatus = 200;
+			requestcomplete = 1;
+			close(filediscriptor);
+			return;
+			//break;
+		}
+		else
+			requeststatus = 0;
+	//	close(filediscriptor);
+	//while (!requestcomplete)
+	}
+
+void					Request::setchunckedbody()
+{
+	int found = 0;
+	std::string printstring;
+	int printingnum = 0;
+	backup += data;
+	data.erase();
+	if ((found = backup.find("\r\n"))!= std::string::npos)
+	{
+		if (chunkcomplete== true)
+		{
+    	
+			if (IsHex(backup.substr(0,found)) == false)
+			{
+				std::cout<<backup.substr(0,found)<<std::endl;
+				std::cout<<"allo allo allo allo allo "<<std::endl;
+				requestcomplete = 1;
+				requeststatus = 400;
+				chunkcomplete = 1;
+				chunksize = -1;
+				return;
+			}
+			std::istringstream iss(backup.substr(0,found));
+			std::cout<<"backup line :"<<backup.substr(0,found)<<std::endl;
+    		iss >> std::hex >> chunksize;
+			if ((backup.find("\r\n") + 2) < backup.size() )
+				backup  = backup.substr(found + 2);
+			if (chunksize == 0)
+			{
+				while(1)
+				{
+					std::cout<<"wlah ta hbss hnaya"<<std::endl;
+				}
+		}
+		}
+		if ( chunksize != -1)
+		{
+			if (chunksize == 0)
+			{
+				requestcomplete = true;
+				chunkcomplete = true;
+				return;
+			}
+			size_t t = backup.size();
+			if (backup.size() >= chunksize + 2)
+			{
+				printingnum =  write(filediscriptor,backup.substr(0,chunksize).c_str(),chunksize);
+				chunkcomplete = 1;
+				if (backup.size() > chunksize + 2)
+				{
+					backup = backup.substr(chunksize + 2);
+				}
+			}
+			else
+			{
+				chunkcomplete = false;
+			}
+
+		}
+	//	else
+	//	{
+	//		//if (chunksize == 0)
+	//		//{
+	//			std::cout<<"allo"<<std::endl;
+	//			chunkcomplete = true;
+	//			requestcomplete = true;
+	//		//}
+	//	}
+
+		
+
+	}	
+
+}
+
+
+void					Request::settingbody()
+{
+	if (method == "POST" && content_lenght.empty() == true && thereistraansfer == false)
+	{
+		requeststatus = 400;
+	}
+	else if (content_lenght.empty() == false && thereistraansfer == true)
+	{
+		requeststatus = 400;
+	}
+	else if (content_lenght.empty() == false)
+	{
+		setunchunkedbody();
+		
+	}
+	else
+	{
+		setchunckedbody();
+	}
+}
+int 					Request::parserequest(char *buffer, int size)
+{
+	//if (backup.size() > 10000)
+	//{
+	//	for (int i = 0; i < 1000; i++)
+	//	std::cout<<"backup > 10000" <<std::endl;
+	//	
+	//}
+	size_t	foundplace = 0;
+	int po = 0;
+	//int filediscriptor;
+	std::string point = ".";
+	data.append(buffer, size);
+	if (!requestcomplete)
+	{
+		po = 1;
+		if (!headerscopmlete)
+		{ 
+			if ((foundplace = data.find("\r\n\r\n")) != std::string::npos)
+			{
+				std::string tmp;
+				tmp =data.substr(0,foundplace);
+				handleheaders(tmp);
+				data = data.substr(foundplace + 4);
+				tmp.erase();
+				headerscopmlete = 1;
+				if(get_method() != "POST")
+				{
+					std::cout<<"surly it s port method|"<<get_method()<<"|"<<std::endl;
+					return requestcomplete;
+				}
+			}
+		}
+			if (headerscopmlete && !requestcomplete)
+			{
+				// so here i don t need to forget about bodypath so let s start handlig without a bodyy path 
+				// imagining there just "" as a path
+				if (pathbody == "")
+				{
+					MimeType op;
+					std::string   lop;
+					std::string &lop1 = content_type;
+					std::string name = getrandomname() ;
+					name +=  op.get_extension(content_type);
+					pathbody = name;
+				}
+					filediscriptor = open(pathbody.c_str(), O_CREAT | O_RDWR | O_APPEND, 0666);
+				//	std::cout<<filediscriptor<<std::endl;
+					point.erase();
+					if (filediscriptor == -1)
+					{
+						//bad request
+						requeststatus = 400;
+						return requestcomplete = 1;
+					}
+					else if (requeststatus == 0)// if not a bad request
+					{
+						settingbody();
+					}
+				if (requestcomplete && requeststatus == 0)
+				{
+					requeststatus = 200;
+					close(filediscriptor);
+				}
+				//after handling headers we need to check on is there is a body nd check the extension 
+				//remind me of taking this one put
+				//requestcomplete = 1;
+			}
+		}
+		if (po == 0)
+			{
+				std::cout<<"i m here "<<std::endl;
+			}
+		printingrequestelements();
+
+	return (requestcomplete);
+}
+
+int					Request::handleheaders(std::string data2)
+{
+	int count2 = 0;
+	std::string tmp;
+	tmp = data2.substr(0,data2.find("\r\n"));
+	if (findfirstline(tmp) != -1)
+	{
+		for(int i = 0; i < tmp.size(); i++)
+		{
+			if (tmp[i] != ' ')
+			{
+				std::string op;
+				while(tmp[i] != ' ' && i < tmp.size())
+				{
+					op += tmp[i];
+					i++;
+				}
+				count2++;
+				if (count2 == 1)
+					setmethod(op);
+				else if (count2 == 2)
+					setrequest(op);
+				else
+					sethttpversion(op);
+				op.erase();
+			}
+		}
+		data2 = data2.substr(data2.find("\n") + 1);
+		//std::cout<<data2<<std::endl;
+		int p = 0;
+		int f = 0;
+		int cc = 0;
+		while (((p = data2.find("\n")) != std::string::npos || (p =  data2.find("\r\n\r\n")) != std::string::npos))
+		{
+			if (f != 1)
+			 tmp = data2.substr(0, p - 1);
+			else
+				tmp = data2.substr(0,p);
+			cc = tmp.find(":");
+			//std::cout<<"|"<<tmp.substr(cc + 2)<<"|"<<std::endl;	
+		//	std::cout<<cc<<std::endl;
+			std::string headersfield[5] = {"Host","Connection","Content-Length","Content-Type","Transfer-Encoding"};
+		//	std::cout<<tmp.substr(0, cc ).compare(headersfield[2])<<std::endl;
+		//	std::string tmp;
+			std::string c = " ";
+			if (tmp.substr(0,cc ).find(" ") != std::string::npos)
+			{
+//std::cout<<tmp.substr(0,cc).compare(headersfield[3])<< "Tmp = " << tmp.substr(0,cc) << " header = "<< headersfield[3]<<std::endl;
+				return 0;
+			}
+			if (tmp.substr(0, cc ).compare(headersfield[0])== 0)
+			{
+				sethost(tmp.substr(cc + 2));
+					
+			}
+			if (tmp.substr(0, cc ).compare(headersfield[1])== 0)
+				setconnection(tmp.substr(cc + 2));
+					
+			if (tmp.substr(0, cc ).compare(headersfield[2])== 0)
+				{//std::cout<<"|                 wa zaaaaaaaab ii  |"<<std::endl;	ƒ
+				setcontent_length(tmp.substr(cc + 2));}
+			if (tmp.substr(0, cc ).compare(headersfield[3])== 0)
+				setcontent_type(tmp.substr(cc + 2));
+			if (tmp.substr(0, cc ).compare(headersfield[4])== 0)
+				settransferchunks(tmp.substr(cc + 2));
+			if (f != 1)
+				data2 = data2.substr(p + 1);
+			else
+			{
+				break;
+			}
+			if (data2.find("\n") == std::string::npos)
+			{
+				f = 1;
+				data2 += "\n";
+			} 
+		}   
+	}
+	return 1;
+}
+
+void			Request::printingrequestelements()
+{
+	std::cout<<"Method            : "<<get_method()<<std::endl;
+	std::cout<<"Request UR        : "<<requestur<<std::endl;
+	std::cout<<"HOST              : "<<gethost()<<std::endl;
+	std::cout<<"Content Type      : "<<content_type<<std::endl;
+	std::cout<<"Content length    : "<<content_lenght<<std::endl;
+	std::cout<<"Connection        : "<<Connection<<std::endl;
+	std::cout<<"Socketfd          : "<<setsocketid<<std::endl;
+	std::cout<<"pathbody          : "<<pathbody<<std::endl;
+	std::cout<<"request complete  : "<<requestcomplete<<std::endl;
+	std::cout<<"headers complete  : "<<headerscopmlete<<std::endl;
+//	if (chunkcomplete == false)
+//		sleep();
+	if(chunksize != -1)
+	{
+	//	for (int i= 0; i < 50;i++ )
+	//	{
+	//std::cout<<"============================================================================================================="<<std::endl;
+	//	}
+	//		sleep(10);
+
+	}
+	std::cout<<"chunksize  : "<<chunksize<<std::endl;
+
+	std::cout<<"chunked complete  : "<<chunkcomplete<<std::endl;
+
+
+}
+
+
+/* --------------------------------- ACCESSOR ---------------------------------*/
+
 
 
 /* ************************************************************************** */

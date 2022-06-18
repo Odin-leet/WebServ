@@ -8,42 +8,52 @@
 #include <string.h>
 #include <netinet/in.h>
 #include "Request.hpp"
+#include <stdlib.h>
 #include <sys/select.h>
-#define PORT 7070
-
-int  findfirstline(std::string *tab)
+#include <fcntl.h>
+#include <map>
+#define PORT 3035
+#define BUFFERSIZE 70000
+int  findfirstline(std::string data)
 {
 	std::string stringg[9];
-	stringg[0] ="GET ";
-	stringg[1] ="POST ";
-	stringg[2] ="DELETE ";
-	
+	stringg[0] ="GET";
+	stringg[1] ="POST";
+	stringg[2] ="DELETE";
+
+	std::string tmp;
+	tmp = data.substr(0,data.find(" "));
+	//std::cout<<tmp<<std::endl;
 
 	for (int i = 0; i <= 2 ; i++)
 	{
-		if (tab[0].find(stringg[i]) == 0)
-		{
-			return i;
-		}
+			if (tmp.find(stringg[i]) == 0)
+			{
+				return i;
+			}
 	}
+	tmp.erase();
 	return(-1);
 }
 
 
 int main(){
-	char buffer[1024] = { 0 };
+	char *buffer = (char *)malloc(sizeof(char) * BUFFERSIZE + 1);
 	int activ;
+	int wahedl9laoui;
 	int clientsocket[30];
 	Request req;
+	std::map<int, Request> Requestsmap;
+	//std::vector<Request> op;
 	int max_sd;
 	int sd;
-	char *hello =  "HTTP/1.1 200 OK\r\nAccept-Ranges: bytes\r\nContent-Length: 45\r\nContent-Type: text/plain\r\n\r\nHello World! My payload includes a trailing CRLF."; 
+	//char *hello =  "HTTP/1.1 200 OK\r\nAccept-Ranges: bytes\r\nContent-Length: 45\r\nContent-Type: text/plain\r\n\r\nHello World! My payload includes a trailing CRLF."; 
 	int opt = 1;
 
 	for (int i = 0;i < 30; i++)
 		clientsocket[i] = 0;
 	int new_socket;
-	std::string headersfield[5] = {"Host","Connection","Content-Length","Content-Type","Transfer-Encoding"};
+	
 	fd_set readsfds;
 	int valread = 0;
 	struct sockaddr_in address;
@@ -76,88 +86,17 @@ int main(){
 		{
 			new_socket = accept(sockfd, (struct sockaddr*)&address, (socklen_t*)&addrlen);
 			req.set_socketid(new_socket);
-			valread = read(new_socket, buffer, 1024);
+			valread = read(new_socket, buffer,BUFFERSIZE);
 			buffer[valread] = '\0';
-
-
-			while (buffer[c] != '\0')
-			{
-				if (buffer[c] == '\n')
-					count++;
-				c++;
-			}
-			std::cout<<count<<"count";
-			std::string tab[count + 1];
-			int j =0 ;
-			c = 0;
-			while (buffer[c] != '\0')
-			{
-				if (buffer[c] == '\n')
-				{
-					j++;
-					c++;
-				}
-				if (buffer[c] != '\r')
-					tab[j] += buffer[c];
-				c++;
-			}
-			for (int i = 0; i < count + 1; i++)
-				std::cout<<"LINE = "<< i << " " <<tab[i]<<std::endl;
-			int count2 = 0;
-			if (findfirstline(tab) != -1)
-			{
-				for(int i = 0; i < tab[0].size(); i++)
-				{
-					if (tab[0][i] != ' ')
-					{
-						count2++;
-						std::string op;
-						while(tab[0][i] != ' ' && i < tab[0].size())
-						{
-							op += tab[0][i];
-							i++;
-						}
-						if (count2 == 1)
-							req.setmethod(op);
-						else if (count2 == 2)
-							req.setrequest(op);
-						else
-							req.sethttpversion(op.substr(0,op.size()));
-						op.erase();
-					}
-				}
-				std::cout<<"first line :"<<tab[0]<<std::endl;
-				int p;
-				for (int i = 1; i < count; i++)
-				{
-					p = tab[i].find(":");
-					for(int j = 0; j < p; j++)
-					{
-						if (tab[i][j] == ' ')
-							return 0;
-					}
-					std::string sub;
-					sub = tab[i].substr(0, p);
-					if (sub.compare(headersfield[0])== 0)
-						req.sethost(tab[i].substr(p + 2));
-					if (sub.compare(headersfield[1])== 0)
-						req.setconnection(tab[i].substr(p + 2));
-					if (sub.compare(headersfield[2])== 0)
-						req.setcontent_length(tab[i].substr(p + 2));
-					if (sub.compare(headersfield[3])== 0)
-						req.setcontent_type(tab[i].substr(p + 2));
-					if (sub.compare(headersfield[4])== 0)
-							req.settransferchunks(tab[i].substr(p + 2));
-				}
-				std::cout<<"couunt is " <<count2<<std::endl;
-				}
-				std::cout<<"method : "<<req.get_method()<<std::endl;
-				std::cout<<"request ur : "<<req.get_requestur()<<std::endl;
-				std::cout<<"http version: "<<"|"<<req.get_httpversion()<<"|"<<std::endl;  
-				std::cout<<"Host : " <<req.gethost()<<std::endl;     
-				std::cout<<"Connection : "<<req.get_connection()<<std::endl;  
-				send(new_socket, hello, strlen(hello), 0);
-				printf("Hello message sent\n");
+			std::string str;
+			str.append(buffer);
+		//	std::cout<<str;
+			if (req.get_requestiscomplete() == true)
+								break;
+			req.parserequest(buffer, valread);
+			//std::cout<<"im hereeeeeeeeeee"<<std::endl;
+			Requestsmap[new_socket] = req;
+			//printf("Hello message sent\n");
 				for(int i = 0 ;i < 30;i++)
 				{
 					if (clientsocket[i] == 0)
@@ -166,18 +105,23 @@ int main(){
 						break;
 					}
 				}
-			}
+		}
 			      //else its some IO operation on some other socket
-        for (int i = 0; i < 30; i++)  
+		
+	    for (int i = 0; i < 30; i++)  
         {  
             sd = clientsocket[i];  
-                 
+				//std::cout<<"allo"<<std::endl;
             if (FD_ISSET( sd , &readsfds))  
             {  
+				std::map<int, Request>::iterator it;
                 //Check if it was for closing , and also read the 
                 //incoming message 
-                if ((valread = read( sd , buffer, 1024)) == 0)  
+				wahedl9laoui = open("test.txt", O_CREAT | O_RDWR | O_APPEND, 0666);
+                if ((valread = read( sd , buffer, BUFFERSIZE)) == 0)  
                 {  
+					
+					
                     //Somebody disconnected , get his details and print 
                     getpeername(sd , (struct sockaddr*)&address , \
                         (socklen_t*)&addrlen);  
@@ -186,19 +130,38 @@ int main(){
                          
                     //Close the socket and mark as 0 in list for reuse 
                     close( sd );  
+					
                     clientsocket[i] = 0;  
                 }  
                 else 
                 {  
+					std::string str2;
+			//std::cout<<str2.append(buffer)<<std::endl;
+				//	write(wahedl9laoui,buffer,valread);
                     buffer[valread] = '\0';  
-                    send(sd , buffer , strlen(buffer) , 0 );  
+					for (std::map<int, Request>::iterator it = Requestsmap.begin(); it != Requestsmap.end(); ++it)
+					{
+						if (it->first == sd)
+						{
+						//	if (it->second.)
+							if (it->second.get_requestiscomplete() == true)
+								break;
+						//	it->second.adddata(buffer, valread);
+						//	std::cout<<" i m heree ------------ "<< sd<<std::endl;
+							it->second.parserequest(buffer, valread);
+						}
+					}
+					str2.erase();
+                    //send(sd , buffer , strlen(buffer) , 0 );
+			  
                 }  
+				close(wahedl9laoui);
             }  
         } 
 		}
 		
 
 
-
+		//while (1);
 		return 0;
 	}

@@ -4,7 +4,7 @@
 # include <iostream>
 # include <string>
 # include <stdlib.h>
-
+# include "webser.hpp"
 class Request
 {
 
@@ -14,6 +14,8 @@ class Request
 		Request( Request const & src );
 		~Request();
 		Request &		operator=( Request const & rhs );
+		void settingbody();
+		void printingrequestelements();
 		void setmethod(std::string me);
 		void sethost(std::string ho);
 		void setconnection(std::string str);
@@ -35,11 +37,22 @@ class Request
 		void settransferstat(bool j);
 		void set_ip(std::string);
 		void set_port(std::string);
-		bool get_connection();
+		int get_connection();
 		void set_socketid(int fd);
 		int	 get_socketid();
+		bool get_requestiscomplete()
+		{
+			return requestcomplete;
+		}
+		int parserequest(char *buffer, int size);
 		char *accept_encoding();
-
+		int handleheaders(std::string data2);
+		void setunchunkedbody();
+		void setchunckedbody();
+		bool IsHex(const std::string& str);
+	//	void settingbody();
+		std::string	getrandomname();
+		void adddata(char *buffer, int c);
 	private:
 		std::string method;
 		std::string ipaddress;
@@ -49,17 +62,30 @@ class Request
 		std::string host;
 		bool thereistraansfer;
 		std::string requestur;
-		bool Connection;
+		int Connection;
 		bool transferchunks;
 		std::string content_type;
 		std::string  content_lenght;
-		//std::string *user_agent;
+		std::string data;
+		bool requestcomplete;
+		bool headerscopmlete;
+		std::string pathbody;
+		int requeststatus;
+		int filediscriptor;
+		int bodylenght;
+		std::string backup;
+		size_t writingchar;
+		int chunksize;
+		bool chunkcomplete;
+		int Reminder;
+		//this attribut it s about (content L and Tran E )
 		//std::string *Accept_encoding;
 		
 
 
 }; 
 
+int  findfirstline(std::string data);
 std::ostream &			operator<<( std::ostream & o, Request const & i );
 
 #endif /* ********************************************************* REQUEST_H */
