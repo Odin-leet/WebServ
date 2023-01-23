@@ -31,14 +31,46 @@ class Request
 		std::string get_method();
 		std::string gethost();
 		std::string get_port();
+		std::string server_name;
+		std::string get_server_name()
+		{
+			return server_name;
+		}
+		void set_server_name(std::string name)
+		{
+			 server_name = name;
+		}
 		std::string get_ip();
 		std::string getcontentlenght();
+		std::string	get_pathbody()
+		{
+			return pathbody;
+		}
 		bool gettransferstat();
 		void settransferstat(bool j);
 		void set_ip(std::string);
 		void set_port(std::string);
 		int get_connection();
+		std::string getcontent_type()
+		{
+			return content_type;
+		}
 		void set_socketid(int fd);
+		void set_timeout(long int op){
+			timeout = op;
+		}
+		void setserver_fd(int a )
+		{
+			serverfd = a;
+		}
+		int getserver_fd()
+		{
+			return serverfd;
+		}
+		long int get_timeout()
+		{
+			return timeout;
+		}
 		int	 get_socketid();
 		bool get_requestiscomplete()
 		{
@@ -50,7 +82,7 @@ class Request
 		void setunchunkedbody();
 		void setchunckedbody();
 		bool IsHex(const std::string& str);
-	//	void settingbody();
+		int iperfect;
 		std::string	getrandomname();
 		void adddata(char *buffer, int c);
 	private:
@@ -73,10 +105,14 @@ class Request
 		int requeststatus;
 		int filediscriptor;
 		int bodylenght;
+		long int timeout;
 		std::string backup;
 		size_t writingchar;
+		bool igottheend;
 		int chunksize;
+		int global;
 		bool chunkcomplete;
+		int serverfd;
 		int Reminder;
 		//this attribut it s about (content L and Tran E )
 		//std::string *Accept_encoding;
@@ -86,6 +122,6 @@ class Request
 }; 
 
 int  findfirstline(std::string data);
-std::ostream &			operator<<( std::ostream & o, Request const & i );
+// std::ostream &			operator<<( std::ostream & o, Request const & i );
 
 #endif /* ********************************************************* REQUEST_H */

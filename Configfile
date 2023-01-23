@@ -1,0 +1,49 @@
+autoIndex: true
+root: /Users/ashite
+server:
+    serverName: saf
+    listen: 127.0.0.1:4040
+    root: ./root
+server:
+    serverName: hamid
+    listen: localhost:2025
+    root: /Users/ashite/Desktop/ErrorPages/dist
+    errorPage: 404 /404.html
+    allowedMethods: POST GET DELETE
+    location:
+        path: /Desktop
+        index: nginx.txt 
+        root: /Users/ashite
+        errorPage: 404 /Desktop/ErrorPages/404.html
+        errorPage: 403 /Desktop/ErrorPages/403.html
+        uploadDirectory: /var/www/html/public/uploads
+        allowedMethods: POST GET DELETE
+        cgiPath: ./Networking/index.html
+        cgiExt: .php .php5 .php7 .php-cgi .php3 .php4 .php5 .php6
+server:
+    serverName: Mohmad
+    listen: 127.0.0.1:2020
+    root: /Users/ashite
+    allowedMethods: POST GET DELETE
+    location:
+        path: /dist
+        index: index.html
+        autoIndex: false
+        root: /Users/ashite/Desktop/heskanorWebserv/Assets/Dayloader
+        errorPage: 399 ./Notworking/index.html
+        errorPage: 500 ./Networking/index.html
+        cgiPath: /Users/ashite/Desktop/php-cgi
+        cgiExt: .php .php5 .php7 .php-cgi .php3 .php4 .php5 .php6
+    location:
+        path: /Desktop
+        index: index.html
+        autoIndex: false
+        bodySizeLimit: 12
+        root: /Users/ashite
+        errorPage: 399 ./Notworking/index.html
+        errorPage: 500 ./Networking/index.html
+        return: http://www.youtube.com
+        uploadDirectory: /Desktop/sigma3
+        allowedMethods: POST GET DELETE
+        cgiPath: /Users/ashite/Desktop/php-cgi
+        cgiExt: .php .php5 .php7 .php-cgi .php3 .php4 .php5 .php6
